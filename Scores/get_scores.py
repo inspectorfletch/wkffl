@@ -10,8 +10,8 @@ from openpyxl.styles import colors
 
 from joblib import Parallel, delayed
 
-year = 2019
-week = 1
+year = None
+week = None
 
 positions = set(['QB', 'RB', 'WR', 'TE', 'K'])
 
@@ -19,30 +19,27 @@ class PlayerStats(object):
     def __init__(self, player_cell):
         self.player_cell = player_cell
         player_name = self.player_cell.value
-        
+
         print self
-    
+
         player_list = nflgame.find(player_name)
         if player_list is None or len(player_list) == 0:
             print "Player not found!", player_name
             exit(1)
-            
+
         self.player_name = player_name
         self.player = None
-        
-        #if len(player_list) == 1:
-        #    self.player = player_list[0]
-        #else:
+
         for p in player_list:
             if p.position != '' and p.position in positions:
                 self.player = p
                 break
-                
+
         if self.player is None:
             raise Exception(player_name + " was not found!")
 
         self.stats = self.player.stats(year, week=week)
-        
+
         self.long_pass_tds = 0
         self.long_rush_tds = 0
         self.long_rec_tds = 0
@@ -428,7 +425,15 @@ if __name__ == '__main__':
     #    if sys.argv[1] == '-co':
     #        team_names = set(['Marc', 'Josh'])
     #        filename = 'Rosters_autoScored.xlsx'
-    
+
+    if (len(sys.argv) == 3):
+        year = int(sys.argv[1])
+        week = int(sys.argv[2])
+    else:
+        (year, week) = nflgame.live.current_year_and_week()
+
+    print "Scores for {0} Week {1}".format(str(year), str(week))
+
     roster_book = load_workbook('C:\Users\joshw\OneDrive\WKFFL\\' + filename)
     roster_sheet = roster_book['Cap']
     sheet_ranges = {
