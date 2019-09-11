@@ -13,10 +13,17 @@ from joblib import Parallel, delayed
 year = None
 week = None
 
-positions = set(['QB', 'RB', 'WR', 'TE', 'K'])
+position_rows = {
+    "QB": [1,2],
+    "RB": [4,5,6],
+    "WR": [8,9,10,11],
+    "TE": [13],
+    "K": [16],
+    "DEF": [19]
+}
 
 class PlayerStats(object):
-    def __init__(self, player_cell):
+    def __init__(self, player_cell, position):
         self.player_cell = player_cell
         player_name = self.player_cell.value
 
@@ -31,7 +38,7 @@ class PlayerStats(object):
         self.player = None
 
         for p in player_list:
-            if p.position != '' and p.position in positions:
+            if p.position != '' and p.position == position:
                 self.player = p
                 break
 
@@ -187,8 +194,8 @@ class PlayerStats(object):
         return str(self.player_cell.value)
 
 class KickerStats(PlayerStats):
-    def __init__(self, player_cell):
-        super(self.__class__, self).__init__(player_cell)
+    def __init__(self, player_cell, position):
+        super(self.__class__, self).__init__(player_cell, position)
         
         self.fg30 = 0
         self.fg40 = 0
@@ -366,19 +373,22 @@ class DefenseStats(PlayerStats):
 class Team:
     def __init__(self, team_name, player_columns):
         self.team_name = team_name
-        self.player_columns = player_columns
+        self.player_columns = []
         self.player_index = OrderedDict()
         
-        for player_cell in self.player_columns[:10]:
-            player = PlayerStats(player_cell)
-            self.player_index[player.player.playerid] = player
-            
-        kicker = KickerStats(player_columns[10])
-        self.player_index[kicker.player.playerid] = kicker
-        
-        defense = DefenseStats(player_columns[11])
-        self.player_index[0] = defense
-            
+        for player_cell, position in player_columns:
+            self.player_columns.append(player_cell)
+
+            if position == "DEF":
+                defense = DefenseStats(player_cell)
+                self.player_index[0] = defense
+            elif position == "K":
+                kicker = KickerStats(player_cell, position)
+                self.player_index[kicker.player.playerid] = kicker
+            else:
+                player = PlayerStats(player_cell, position)
+                self.player_index[player.player.playerid] = player
+
         for playerid, player in self.player_index.iteritems():
             if not isinstance(player, DefenseStats) and player.stats.receiving_tds > 0:
                 for play in player.plays:
@@ -411,7 +421,12 @@ class Team:
 
 def calculate_scores(team_name, team_col):
     print "****" + team_name + "****"
-    players = [cell[0] for cell in team_col if cell[0].value is not None]
+
+    players = []
+    for position in position_rows:
+        for row_num in position_rows[position]:
+            if team_col[row_num].value is not None:
+                players.append((team_col[row_num], position))
 
     team = Team(team_name, players)
     return team
@@ -437,14 +452,14 @@ if __name__ == '__main__':
     roster_book = load_workbook('C:\Users\joshw\OneDrive\WKFFL\\' + filename)
     roster_sheet = roster_book['Cap']
     sheet_ranges = {
-        'Don': roster_sheet['B2':'B20'],
-        'Dean': roster_sheet['D2':'D20'],
-        'Joe': roster_sheet['F2':'F20'],
-        'Marc': roster_sheet['H2':'H20'],
-        'Josh': roster_sheet['J2':'J20'],
-        'Michael': roster_sheet['L2':'L20'],
-        'Pat': roster_sheet['N2':'N20'],
-        'Nick': roster_sheet['P2':'P20'],
+        'Don': roster_sheet['B'],
+        'Dean': roster_sheet['D'],
+        'Joe': roster_sheet['F'],
+        'Marc': roster_sheet['H'],
+        'Josh': roster_sheet['J'],
+        'Michael': roster_sheet['L'],
+        'Pat': roster_sheet['N'],
+        'Nick': roster_sheet['P'],
     }
     
     teams = Parallel(n_jobs=2, backend="threading")(delayed(calculate_scores)(team_name, team_col) for team_name, team_col in sheet_ranges.iteritems() if team_name in team_names)
