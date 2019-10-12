@@ -27,11 +27,11 @@ class PlayerStats(object):
         self.player_cell = player_cell
         player_name = self.player_cell.value
 
-        print self
+        print(self)
 
         player_list = nflgame.find(player_name)
         if player_list is None or len(player_list) == 0:
-            print "Player not found!", player_name
+            print("Player not found!", player_name)
             exit(1)
 
         self.player_name = player_name
@@ -245,7 +245,7 @@ class KickerStats(PlayerStats):
         
 class DefenseStats(PlayerStats):
     def __init__(self, player_cell):
-        print player_cell.value
+        print(player_cell.value)
     
         self.player_cell = player_cell
         self.print_name = player_cell.value
@@ -262,7 +262,7 @@ class DefenseStats(PlayerStats):
         self.game = self.find_game(self.official_name)
 
         if self.game is None or self.game == '' or not (self.game.playing() or self.game.game_over()):
-            print 'No game in progress for ' + self.print_name
+            print('No game in progress for ' + self.print_name)
             return
         else:
             if self.game.home == self.official_name:
@@ -278,10 +278,10 @@ class DefenseStats(PlayerStats):
                 
             for play in drive.plays:
                 for event in play.events:
-                    if event["team"] == self.official_name and event.has_key("defense_tds"):
+                    if event["team"] == self.official_name and "defense_tds" in event:
                         self.dst_tds += event["defense_tds"]
                         
-                    if event["team"] == self.official_name and event.has_key("defense_frec"):
+                    if event["team"] == self.official_name and "defense_frec" in event:
                         self.fumbles_rec += event["defense_frec"]
         
         plays = nflgame.combine_game_stats([ self.game ])
@@ -389,7 +389,7 @@ class Team:
                 player = PlayerStats(player_cell, position)
                 self.player_index[player.player.playerid] = player
 
-        for playerid, player in self.player_index.iteritems():
+        for playerid, player in self.player_index.items():
             if not isinstance(player, DefenseStats) and player.stats.receiving_tds > 0:
                 for play in player.plays:
                     if play.receiving_tds > 0:
@@ -420,7 +420,7 @@ class Team:
             player.print_to_spreadsheet(team_sheet)
 
 def calculate_scores(team_name, team_col):
-    print "****" + team_name + "****"
+    print("****" + team_name + "****")
 
     players = []
     for position in position_rows:
@@ -447,9 +447,9 @@ if __name__ == '__main__':
     else:
         (year, week) = nflgame.live.current_year_and_week()
 
-    print "Scores for {0} Week {1}".format(str(year), str(week))
+    print("Scores for {0} Week {1}".format(str(year), str(week)))
 
-    roster_book = load_workbook('C:\Users\joshw\OneDrive\WKFFL\\' + filename)
+    roster_book = load_workbook('C:\\Users\\joshw\\OneDrive\\WKFFL\\\\' + filename)
     roster_sheet = roster_book['Cap']
     sheet_ranges = {
         'Don': roster_sheet['B'],
@@ -462,8 +462,8 @@ if __name__ == '__main__':
         'Nick': roster_sheet['P'],
     }
     
-    teams = Parallel(n_jobs=2, backend="threading")(delayed(calculate_scores)(team_name, team_col) for team_name, team_col in sheet_ranges.iteritems() if team_name in team_names)
-    #teams = [calculate_scores(team_name, team_col) for team_name, team_col in sheet_ranges.iteritems() if team_name in team_names]
+    teams = Parallel(n_jobs=2, backend="threading")(delayed(calculate_scores)(team_name, team_col) for team_name, team_col in sheet_ranges.items() if team_name in team_names)
+    #teams = [calculate_scores(team_name, team_col) for team_name, team_col in sheet_ranges.items() if team_name in team_names]
 
     for team in teams:
         team.print_to_spreadsheet(roster_book)
@@ -475,5 +475,5 @@ if __name__ == '__main__':
     #    time_value += ' (Championship Only)'
     
     roster_book['Cap']['A29'].value = pytz.utc.localize(now_time).astimezone(eastern).strftime(time_format_string)
-    roster_book.save('C:\Users\joshw\OneDrive\WKFFL\Rosters_autoScored.xlsx')
+    roster_book.save('C:\\Users\\joshw\\OneDrive\\WKFFL\\Rosters_autoScored.xlsx')
 
