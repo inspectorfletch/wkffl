@@ -468,7 +468,7 @@ if __name__ == '__main__':
     for team in teams:
         team.print_to_spreadsheet(roster_book)
 
-    now_time = datetime.datetime.now()
+    now_time = datetime.datetime.utcnow()
     eastern = pytz.timezone('US/Eastern')
     time_format_string = 'Last updated: %I:%M %p %a %b %d %Y EST'
     #if len(team_names) == 2:
