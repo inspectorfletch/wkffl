@@ -1,0 +1,75 @@
+Week 1:
+	Joe - Marc
+	Michael - Pat
+	Dean - Josh
+	Don - Nick
+Week 2:
+	Josh - Michael
+	Don - Marc
+	Joe - Nick
+	Dean - Pat
+Week 3:
+	Marc - Josh
+	Don - Joe
+	Michael - Nick
+	Dean - Pat
+Week 4:
+	Marc - Nick
+	Joe - Pat
+	Don - Michael
+	Dean - Josh
+Week 5:
+	Marc - Pat
+	Dean - Joe
+	Don - Josh
+	Michael - Nick
+Week 6:
+	Michael - Pat
+	Dean - Nick
+	Joe - Marc
+	Don - Josh
+Week 7:
+	Don - Dean
+	Joe - Michael
+	Josh - Pat
+	Marc - Nick
+Week 8:
+	Dean - Michael
+	Don - Pat
+	Marc - Josh
+	Joe - Nick
+Week 9:
+	Dean - Marc
+	Joe - Josh
+	Pat - Nick
+	Don - Michael
+Week 10:
+	Joe - Pat
+	Don - Marc
+	Josh - Nick
+	Dean - Michael
+Week 11:
+	Don - Joe
+	Josh - Michael
+	Dean - Nick
+	Marc - Pat
+Week 12:
+	Dean - Nick
+	Don - Michael
+	Marc - Pat
+	Joe - Josh
+Week 13:
+	Josh - Pat
+	Don - Nick
+	Dean - Marc
+	Joe - Michael
+Week 14:
+	Don - Pat
+	Josh - Nick
+	Dean - Joe
+	Marc - Michael
+Week 15:
+	Joe - Josh
+	Pat - Nick
+	Marc - Michael
+	Don - Dean

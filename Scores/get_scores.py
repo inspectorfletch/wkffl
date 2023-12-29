@@ -1,4 +1,3 @@
-import nflgame
 import sys
 import time
 import datetime
@@ -10,20 +9,22 @@ from openpyxl.styles import colors
 
 from joblib import Parallel, delayed
 
+import nflstatswrapper
+from nflstatswrapper import nflstatswrapperfactory
 from PlayerStats import PlayerStats
 
 position_rows = {
     "QB": [1,2],
     "RB": [4,5,6],
     "WR": [8,9,10,11],
-    "TE": [13],
-    "K": [16],
-    "DEF": [19]
+    "TE": [13]#,
+    #"K": [16],
+    #"DEF": [19]
 }
 
 class KickerStats(PlayerStats):
-    def __init__(self, player_cell, position, year, week):
-        super(self.__class__, self).__init__(player_cell, position, year, week)
+    def __init__(self, statswrapper, player_cell, position, year, week):
+        super().__init__(statswrapper, player_cell, position, year, week)
 
         self.fg30 = 0
         self.fg40 = 0
@@ -72,12 +73,13 @@ class KickerStats(PlayerStats):
         self.print_value_to_spreadsheet(player_row, 5, self.fg60)
         
 class DefenseStats(PlayerStats):
-    def __init__(self, player_cell, year, week):
+    def __init__(self, statswrapper, player_cell, year, week):
         print(player_cell.value)
-    
+
+        self.statswrapper = statswrapper
         self.player_cell = player_cell
         self.print_name = player_cell.value
-        self.official_name = nflgame.standard_team(self.print_name)
+        self.official_name = statswrapper.get_standard_team_name(self.print_name)
         
         self.sacks = 0
         self.int = 0
@@ -87,7 +89,7 @@ class DefenseStats(PlayerStats):
         self.two_pts = 0
         self.pts_allowed = -1
 
-        self.game = self.find_game(self.official_name, year, week)
+        self.game = self.statswrapper.find_game(self.official_name, year, week)
 
         if self.game is None or self.game == '' or not (self.game.playing() or self.game.game_over()):
             print('No game in progress for ' + self.print_name)
@@ -112,7 +114,7 @@ class DefenseStats(PlayerStats):
                     if event["team"] == self.official_name and "defense_frec" in event:
                         self.fumbles_rec += event["defense_frec"]
         
-        plays = nflgame.combine_game_stats([ self.game ])
+        plays = self.statswrapper.get_game_plays(self.game)
         for play in plays:
             if play.team == self.official_name:                
                 self.sacks += play.defense_sk
@@ -199,7 +201,7 @@ class DefenseStats(PlayerStats):
                 self.print_value_to_spreadsheet(player_row, 13, 1)
 
 class Team:
-    def __init__(self, team_name, player_columns, year, week):
+    def __init__(self, statswrapper, team_name, player_columns, year, week):
         self.team_name = team_name
         self.player_columns = []
         self.player_index = OrderedDict()
@@ -208,13 +210,13 @@ class Team:
             self.player_columns.append(player_cell)
 
             if position == "DEF":
-                defense = DefenseStats(player_cell, year, week)
+                defense = DefenseStats(statswrapper, player_cell, year, week)
                 self.player_index[0] = defense
             elif position == "K":
-                kicker = KickerStats(player_cell, position, year, week)
+                kicker = KickerStats(statswrapper, player_cell, position, year, week)
                 self.player_index[kicker.player.playerid] = kicker
             else:
-                player = PlayerStats(player_cell, position, year, week)
+                player = PlayerStats(statswrapper, player_cell, position, year, week)
                 self.player_index[player.player.playerid] = player
 
         for playerid, player in self.player_index.items():
@@ -246,7 +248,7 @@ class Team:
         for player in self.player_index.values():
             player.print_to_spreadsheet(team_sheet, year, week)
 
-def calculate_scores(team_name, team_col, year, week):
+def calculate_scores(statswrapper, team_name, team_col, year, week):
     print("****" + team_name + "****")
 
     players = []
@@ -255,7 +257,7 @@ def calculate_scores(team_name, team_col, year, week):
             if team_col[row_num].value is not None:
                 players.append((team_col[row_num], position))
 
-    team = Team(team_name, players, year, week)
+    team = Team(statswrapper, team_name, players, year, week)
     return team
 
 if __name__ == '__main__':
@@ -267,11 +269,17 @@ if __name__ == '__main__':
     #        team_names = set(['Marc', 'Josh'])
     #        filename = 'Rosters_autoScored.xlsx'
 
+    access_token = None
+    if (len(sys.argv) > 1):
+        access_token = {'access_token': sys.argv[1]}
+
+    statswrapper = nflstatswrapperfactory.nflstatswrapperfactory.create(nflstatswrapperfactory.nflstatswrapperfactory.nflapi, access_token)
+
     if (len(sys.argv) == 3):
         year = int(sys.argv[1])
         week = int(sys.argv[2])
     else:
-        (year, week) = nflgame.live.current_year_and_week()
+        (year, week) = statswrapper.current_year_and_week()
 
     print("Scores for {0} Week {1}".format(str(year), str(week)))
 
@@ -288,8 +296,8 @@ if __name__ == '__main__':
         'Nick': roster_sheet['P'],
     }
     
-    teams = Parallel(n_jobs=2, backend="threading")(delayed(calculate_scores)(team_name, team_col, year, week) for team_name, team_col in sheet_ranges.items() if team_name in team_names)
-    #teams = [calculate_scores(team_name, team_col, year, week) for team_name, team_col in sheet_ranges.items() if team_name in team_names]
+    #teams = Parallel(n_jobs=2, backend="threading")(delayed(calculate_scores)(team_name, team_col, year, week) for team_name, team_col in sheet_ranges.items() if team_name in team_names)
+    teams = [calculate_scores(statswrapper, team_name, team_col, year, week) for team_name, team_col in sheet_ranges.items() if team_name in team_names]
 
     for team in teams:
         team.print_to_spreadsheet(roster_book, year, week)
@@ -301,5 +309,5 @@ if __name__ == '__main__':
     #    time_value += ' (Championship Only)'
     
     roster_book['Cap']['A29'].value = pytz.utc.localize(now_time).astimezone(eastern).strftime(time_format_string)
-    roster_book.save('C:\\Users\\joshw\\OneDrive\\WKFFL\\Rosters_autoScored.xlsx')
+    roster_book.save('C:\\Users\\joshw\\Desktop\\Rosters_autoScored.xlsx')
 
