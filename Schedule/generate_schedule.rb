@@ -1,3 +1,7 @@
+require 'io/console'
+
+$teams = ["Don", "Dean", "Joe", "Marc", "Josh", "Michael", "Pat", "Nick"]
+
 class Game
     @@divisions = {
         "Don" => "Senior",
@@ -149,8 +153,6 @@ end
 
 $max_weeks = 0
 def generate_schedule()
-    teams = ["Don", "Dean", "Joe", "Marc", "Josh", "Michael", "Pat", "Nick"]
-
     games = [
         # Start with games that are required based on previous season standings
         Game.new("Marc", "Josh"),
@@ -166,11 +168,11 @@ def generate_schedule()
     ]
 
     i = 0
-    while i < teams.length - 1
+    while i < $teams.length - 1
         2.times do |x|
             j = i + 1
-            while j < teams.length
-                games.push(Game.new(teams[i], teams[j]))
+            while j < $teams.length
+                games.push(Game.new($teams[i], $teams[j]))
                 j += 1
             end
         end
@@ -226,6 +228,43 @@ def run_schedule_generation()
         puts week.str
         puts "\n"
     end
+
+    weeks
 end
 
-run_schedule_generation
+def write_schedule_to_file()
+    Dir.mkdir "schedules" unless File.directory?("schedules")
+
+    schedule_file = File.new(".\\schedules\\schedule.txt", "w")
+    team_files = {}
+    $teams.each do |team|
+        team_file = File.new(".\\schedules\\#{team}.txt", "w")
+        team_files[team] = team_file
+    end
+
+    weeks = run_schedule_generation()
+
+    weeks.weeks.each_with_index do |week, week_num|
+        schedule_file.write("Week #{String(week_num + 1)}")
+        schedule_file.write("\n")
+        schedule_file.write(week.str)
+        schedule_file.write("\n")
+
+        week.games.each do |game|
+            team_file = team_files[game.team1]
+            team_file.write("Week #{week_num + 1}: #{game.team2}")
+            team_file.write("\n")
+
+            team_file = team_files[game.team2]
+            team_file.write("Week #{week_num + 1}: #{game.team1}")
+            team_file.write("\n")
+        end
+    end
+
+    schedule_file.close()
+    team_files.each do |team, team_file|
+        team_file.close()
+    end
+end
+
+write_schedule_to_file
