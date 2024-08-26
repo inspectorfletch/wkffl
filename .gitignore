@@ -105,3 +105,6 @@ venv.bak/
 
 # generated schedules
 Schedule/**/*.txt
+
+**/bin/**
+**/obj/**
