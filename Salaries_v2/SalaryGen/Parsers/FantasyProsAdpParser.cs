@@ -24,8 +24,6 @@ namespace Wkffl.SalaryGen.Parsers
             string posAndRanking = splitLine[4];
             string position = Regex.Match(posAndRanking, @"([A-Z]+)").Value;
 
-            Console.WriteLine(name);
-            Console.WriteLine(posAndRanking);
             int positionRanking = int.Parse(Regex.Match(posAndRanking, @"\d+").Value);
 
             double avgRanking = double.Parse(splitLine[^1].Trim('"'));
