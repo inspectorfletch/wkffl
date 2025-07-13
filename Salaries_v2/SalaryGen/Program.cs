@@ -75,7 +75,7 @@ namespace Wkffl.SalaryGen
                     double fudgeFactor = rand.NextDouble() * (1.10 - 0.9) + 0.9;
 
                     double salary = CalculateRollingAvg(player.Position, player.PositionRanking * fudgeFactor);
-                    Console.WriteLine($"{player.Position},{player.Name},{Math.Round(salary, 1)},{player.Team}");
+                    // Console.WriteLine($"{player.Position},{player.Name},{Math.Round(salary, 1)},{player.Team}");
 
                     rankedPlayers.Add(new SalaryPlayer(player, salary));
                 }
