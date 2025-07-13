@@ -8,27 +8,6 @@ using Wkffl.SalaryGen.Players;
 
 namespace Wkffl.SalaryGen.Parsers
 {
-    internal class ParsedPlayer
-    {
-        public RankingPlayer Player { get; private set; }
-        public readonly int OverallRanking;
-        public readonly int PositionRanking;
-        public readonly double AvgRanking;
-
-        public ParsedPlayer(RankingPlayer player, int overallRanking, int positionRanking, double avgRanking)
-        {
-            this.Player = player;
-            this.OverallRanking = overallRanking;
-            this.PositionRanking = positionRanking;
-            this.AvgRanking = avgRanking;
-        }
-    }
-
-    internal interface IRankingsParser
-    {
-        ParsedPlayer ParsePlayerLine(string[] splitLine);
-    }
-
     internal class FantasyProsAdpParser : IRankingsParser
     {
         public ParsedPlayer ParsePlayerLine(string[] splitLine)
@@ -45,6 +24,8 @@ namespace Wkffl.SalaryGen.Parsers
             string posAndRanking = splitLine[4];
             string position = Regex.Match(posAndRanking, @"([A-Z]+)").Value;
 
+            Console.WriteLine(name);
+            Console.WriteLine(posAndRanking);
             int positionRanking = int.Parse(Regex.Match(posAndRanking, @"\d+").Value);
 
             double avgRanking = double.Parse(splitLine[^1].Trim('"'));

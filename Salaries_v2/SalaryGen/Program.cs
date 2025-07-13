@@ -10,15 +10,22 @@ namespace Wkffl.SalaryGen
 {
     internal class Program
     {
-        private static readonly Random _seed = new Random();
-
         static void Main(string[] args)
         {
-            string year = "2024";
-            if (args.Length == 1)
+            string year = "2025";
+            int seed = Environment.TickCount;
+            if (args.Length >= 1)
             {
                 year = args[0];
             }
+
+            if (args.Length >= 2)
+            {
+                seed = int.Parse(args[1]);
+            }
+
+            Console.WriteLine($"Generating salaries with seed: #{seed}");
+            Random rand = new Random(seed);
 
             Dictionary<string, RankingPlayer> aggregatePlayers = new Dictionary<string, RankingPlayer>();
 
@@ -29,7 +36,7 @@ namespace Wkffl.SalaryGen
                 // Skip the header
                 streamReader.ReadLine();
 
-                FantasyProsAdpParser parser = new FantasyProsAdpParser();
+                IRankingsParser parser = new FantasyProsAdpParser();
                 using (streamReader)
                 {
                     while (!streamReader.EndOfStream)
@@ -65,12 +72,17 @@ namespace Wkffl.SalaryGen
 
                 foreach (RankingPlayer player in posGroup.OrderBy(p => p.PositionRanking).Take(_salaries[posGroup.Key].Count()))
                 {
-                    double fudgeFactor = _seed.NextDouble() * (1.10 - 0.9) + 0.9;
+                    double fudgeFactor = rand.NextDouble() * (1.10 - 0.9) + 0.9;
 
                     double salary = CalculateRollingAvg(player.Position, player.PositionRanking * fudgeFactor);
                     Console.WriteLine($"{player.Position},{player.Name},{Math.Round(salary, 1)},{player.Team}");
 
                     rankedPlayers.Add(new SalaryPlayer(player, salary));
+                }
+
+                if (!Directory.Exists($".\\{year}"))
+                {
+                    Directory.CreateDirectory($".\\{year}");
                 }
 
                 using (StreamWriter fileWriter = new StreamWriter($".\\{year}\\{posGroup.Key}.csv"))
