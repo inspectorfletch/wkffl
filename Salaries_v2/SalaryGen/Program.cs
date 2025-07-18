@@ -90,7 +90,7 @@ namespace Wkffl.SalaryGen
                     Directory.CreateDirectory($".\\GeneratedSalaries\\{year}");
                 }
 
-                using (StreamWriter fileWriter = new StreamWriter($".\\{year}\\{posGroup.Key}.csv"))
+                using (StreamWriter fileWriter = new StreamWriter($".\\GeneratedSalaries\\{year}\\{posGroup.Key}.csv"))
                 { 
                     foreach (SalaryPlayer player in rankedPlayers.OrderByDescending(p => p.Salary))
                     {
