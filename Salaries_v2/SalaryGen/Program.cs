@@ -13,7 +13,7 @@ namespace Wkffl.SalaryGen
         static void Main(string[] args)
         {
             string year = "2025";
-            int seed = Environment.TickCount;
+            int seed = (int)DateTimeOffset.UtcNow.ToUnixTimeSeconds();
             if (args.Length >= 1)
             {
                 year = args[0];
@@ -31,36 +31,41 @@ namespace Wkffl.SalaryGen
 
             foreach (RankingsType type in Enum.GetValues<RankingsType>())
             {
-                StreamReader streamReader = File.OpenText($"E:\\joshw\\source\\repos\\wkffl\\Salaries_v2\\SalaryGen\\Adp\\{year}\\{type}.csv");
+                IEnumerable<RankingsHandler> handlers = type.GetRankingsHandlers(year);
 
-                // Skip the header
-                streamReader.ReadLine();
-
-                IRankingsParser parser = new FantasyProsAdpParser();
-                using (streamReader)
+                foreach (RankingsHandler handler in handlers)
                 {
-                    while (!streamReader.EndOfStream)
+                    StreamReader streamReader = handler.FileStream;
+
+                    // Skip the header
+                    streamReader.ReadLine();
+
+                    IRankingsParser parser = handler.Parser;
+                    using (streamReader)
                     {
-                        string lineVal = streamReader.ReadLine();
-                        if (lineVal == @"""" || string.IsNullOrWhiteSpace(lineVal))
+                        while (!streamReader.EndOfStream)
                         {
-                            continue;
+                            string lineVal = streamReader.ReadLine();
+                            if (lineVal == @"""" || string.IsNullOrWhiteSpace(lineVal))
+                            {
+                                continue;
+                            }
+
+                            string[] splitLine = lineVal.Split(',');
+                            if (splitLine.Length <= 1)
+                            {
+                                continue;
+                            }
+
+                            ParsedPlayer player = parser.ParsePlayerLine(splitLine);
+
+                            if (!aggregatePlayers.ContainsKey(player.Player.Identifier))
+                            {
+                                aggregatePlayers.Add(player.Player.Identifier, player.Player);
+                            }
+
+                            aggregatePlayers[player.Player.Identifier].AddRanking(type, player.OverallRanking, player.PositionRanking, player.AvgRanking);
                         }
-
-                        string[] splitLine = lineVal.Split(',');
-                        if (splitLine.Length <= 1)
-                        {
-                            continue;
-                        }
-
-                        ParsedPlayer player = parser.ParsePlayerLine(splitLine);
-
-                        if (!aggregatePlayers.ContainsKey(player.Player.Identifier))
-                        {
-                            aggregatePlayers.Add(player.Player.Identifier, player.Player);
-                        }
-
-                        aggregatePlayers[player.Player.Identifier].AddRanking(type, player.OverallRanking, player.PositionRanking, player.AvgRanking);
                     }
                 }
             }
@@ -80,9 +85,9 @@ namespace Wkffl.SalaryGen
                     rankedPlayers.Add(new SalaryPlayer(player, salary));
                 }
 
-                if (!Directory.Exists($".\\{year}"))
+                if (!Directory.Exists($".\\GeneratedSalaries\\{year}"))
                 {
-                    Directory.CreateDirectory($".\\{year}");
+                    Directory.CreateDirectory($".\\GeneratedSalaries\\{year}");
                 }
 
                 using (StreamWriter fileWriter = new StreamWriter($".\\{year}\\{posGroup.Key}.csv"))

@@ -8,7 +8,7 @@ using Wkffl.SalaryGen.Players;
 
 namespace Wkffl.SalaryGen.Parsers
 {
-    internal class FantasyProsAdpParser : IRankingsParser
+    internal class FantasyProsOverallAdpParser : IRankingsParser
     {
         public ParsedPlayer ParsePlayerLine(string[] splitLine)
         {
