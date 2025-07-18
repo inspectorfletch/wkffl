@@ -75,6 +75,12 @@ namespace Wkffl.SalaryGen
             {
                 List<SalaryPlayer> rankedPlayers = new List<SalaryPlayer>();
 
+                if (!_salaries.ContainsKey(posGroup.Key))
+                {
+                    Console.WriteLine($"Ignoring unknown position group: {posGroup.Key} with {posGroup.Count()} player(s)");
+                    continue;
+                }
+
                 foreach (RankingPlayer player in posGroup.OrderBy(p => p.PositionRanking).Take(_salaries[posGroup.Key].Count()))
                 {
                     double fudgeFactor = rand.NextDouble() * (1.10 - 0.9) + 0.9;
