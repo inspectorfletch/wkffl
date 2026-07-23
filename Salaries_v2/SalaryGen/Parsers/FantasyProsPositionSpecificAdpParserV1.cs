@@ -8,11 +8,11 @@ using Wkffl.SalaryGen.Players;
 
 namespace Wkffl.SalaryGen.Parsers
 {
-    class FantasyProsPositionSpecificAdpParser : IRankingsParser
+    class FantasyProsPositionSpecificAdpParserV1 : IRankingsParser
     {
         private readonly string _position;
 
-        public FantasyProsPositionSpecificAdpParser(string position)
+        public FantasyProsPositionSpecificAdpParserV1(string position)
         {
             this._position = position;
         }

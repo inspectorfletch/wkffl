@@ -30,13 +30,13 @@ namespace Wkffl.SalaryGen.Players
                     {
                         StreamReader fileReader = File.OpenText(file);
                         string position = file.Split('.', '\\')[^2];
-                        handlers.Add(new RankingsHandler(fileReader, new FantasyProsPositionSpecificAdpParser(position)));
+                        handlers.Add(new RankingsHandler(fileReader, new FantasyProsPositionSpecificAdpParserV2(position)));
                     }
                     break;
 
                 default:
                     StreamReader streamReader = File.OpenText($".\\Adp\\{year}\\{rankingsType}.csv");
-                    IRankingsParser parser = new FantasyProsOverallAdpParser();
+                    IRankingsParser parser = new FantasyProsOverallAdpParserV2();
                     handlers.Add(new RankingsHandler(streamReader, parser));
                     break;
             }

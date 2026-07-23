@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using System.Numerics;
 using Wkffl.SalaryGen.Parsers;
 using Wkffl.SalaryGen.Players;
 
@@ -12,8 +13,13 @@ namespace Wkffl.SalaryGen
     {
         static void Main(string[] args)
         {
-            string year = "2025";
             int seed = (int)DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            if (args.Length < 1)
+            {
+                throw new ArgumentException("Year is required");
+            }
+
+            string year = null;
             if (args.Length >= 1)
             {
                 year = args[0];
@@ -25,8 +31,7 @@ namespace Wkffl.SalaryGen
             }
 
             Console.WriteLine($"Generating salaries with seed: #{seed}");
-            Random rand = new Random(seed);
-
+            SalaryGenerator generator = new SalaryGenerator(seed);
             Dictionary<string, RankingPlayer> aggregatePlayers = new Dictionary<string, RankingPlayer>();
 
             foreach (RankingsType type in Enum.GetValues<RankingsType>())
@@ -58,7 +63,6 @@ namespace Wkffl.SalaryGen
                             }
 
                             ParsedPlayer player = parser.ParsePlayerLine(splitLine);
-
                             if (!aggregatePlayers.ContainsKey(player.Player.Identifier))
                             {
                                 aggregatePlayers.Add(player.Player.Identifier, player.Player);
@@ -83,10 +87,7 @@ namespace Wkffl.SalaryGen
 
                 foreach (RankingPlayer player in posGroup.OrderBy(p => p.PositionRanking).Take(_salaries[posGroup.Key].Count()))
                 {
-                    double fudgeFactor = rand.NextDouble() * (1.10 - 0.9) + 0.9;
-
-                    double salary = CalculateRollingAvg(player.Position, player.PositionRanking * fudgeFactor);
-                    // Console.WriteLine($"{player.Position},{player.Name},{Math.Round(salary, 1)},{player.Team}");
+                    double salary = generator.CalculateRollingAvg(player.Position, player.PositionRanking);
 
                     rankedPlayers.Add(new SalaryPlayer(player, salary));
                 }
@@ -116,28 +117,50 @@ namespace Wkffl.SalaryGen
             ["DST"] = new double[] { 14.5, 14.2, 13.8, 13.5, 13.4, 13.2, 13.1, 13.0, 13.0, 12.9, 12.9, 12.8, 12.8, 12.7, 12.6, 12.6, 12.5, 12.5, 12.4, 12.3, 12.3, 12.2, 12.2, 12.1, 12.0, 12.0, 11.9, 11.8, 11.5, 11.4, 11.2, 11.0 },
         };
 
-        private static double CalculateRollingAvg(string position, double positionRanking)
+        private class SalaryGenerator
         {
-            double[] salaries = _salaries[position];
+            private readonly Random _rand;
 
-            int index = (int)Math.Round(positionRanking);
-
-            double withinRange = positionRanking - index;
-
-            int topRange = index - 2 < 0 ? 0 : index - 2;
-
-            if (topRange >= salaries.Length)
+            public SalaryGenerator(int seed)
             {
-                topRange = salaries.Length - 1;
+                this._rand = new Random(seed);
             }
 
-            int numVals = index < 2 || index > (salaries.Length - 3) ? 1 : 5;
+            public double CalculateRollingAvg(string position, double positionRanking)
+            {
+                double fudgeFactor = this._rand.NextDouble() * (1.10 - 0.9) + 0.9;
+                double fudgedPositionRanking = (positionRanking * fudgeFactor) - 1;
 
-            ArraySegment<double> segment = new ArraySegment<double>(salaries, topRange, numVals);
-            double rollingAvg = segment.Average();
-            double stdDev = segment.CalculateStandardDeviation();
+                double[] salaries = _salaries[position];
 
-            return rollingAvg + (stdDev * withinRange);
+                int index = (int)Math.Round(fudgedPositionRanking);
+
+                double withinRange = positionRanking - index;
+
+                int numVals = 0;
+                int topRange = 0;
+                if (index == 0 || index >= salaries.Length - 1)
+                {
+                    topRange = Math.Min(index, salaries.Length - 1);
+                    numVals = 1;
+                }
+                else if (index == 1 || index == salaries.Length - 2)
+                {
+                    topRange = index - 1;
+                    numVals = 3;
+                }
+                else
+                {
+                    topRange = index - 2;
+                    numVals = 5;
+                }
+
+                ArraySegment<double> segment = new ArraySegment<double>(salaries, topRange, numVals);
+                double rollingAvg = segment.Average();
+                double stdDev = segment.CalculateStandardDeviation();
+
+                return rollingAvg + (stdDev * withinRange);
+            }
         }
     }
 
